@@ -1,0 +1,24 @@
+---
+- hosts: all
+  become: true
+  any_errors_fatal: true
+  gather_facts: false
+  vars:
+    server_ip: "{{ iperf_server }}"
+  tasks:
+    - name: Run Iperf3
+      shell:
+        cmd: "iperf3 -c {{ server_ip }}  -f G -w 500K -R --get-server-output --logfile /tmp/iperf.log"
+      register: run_iperf3
+      tags:
+        - run_iperf3
+    - debug:
+        msg:
+          - "Iperf3 Output"
+          - "{{ run_iperf3 }}"
+      when: run_iperf3 is defined
+    - name: Fetch the OutputFile.
+      fetch:
+        src: /tmp/iperf.log
+        dest: /tmp/iperf.log
+        flat: yes

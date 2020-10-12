@@ -1,0 +1,39 @@
+---
+- hosts: all
+  become: true
+  any_errors_fatal: true
+  gather_facts: false
+  vars:
+    is_server: "{{ start_server | default('') }}"
+  pre_tasks:
+    - name: Ensure machine at {{ ansible_ssh_host  }} SSH port is listening
+      wait_for:
+        host: "{{ ansible_ssh_host  }}"
+        port: 22
+        delay: 30
+      delegate_to: localhost
+    - name: install python
+      raw: sudo apt -y install python
+  tasks:
+    - name: Install Iperf3
+      package:
+        name: iperf3
+        state: latest
+        update_cache: yes
+      register: install_iperf3
+      tags:
+        - install_iperf3
+
+    - debug:
+        msg:
+          - "Installed Iperf3 using package module"
+          - "{{ install_iperf3 }}"
+      when: install_iperf3 is defined
+
+    - name: Start Iperf3
+      shell:
+        cmd: "iperf3 -s -f G -D"
+      register: start_iperf3
+      when: is_server == True
+      tags:
+        - start_iperf3
